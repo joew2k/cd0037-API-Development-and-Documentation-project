@@ -2,6 +2,7 @@
 import json
 import sys
 import os
+from unicodedata import category
 from flask import Flask, request, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
@@ -58,16 +59,17 @@ def create_app(test_config=None):
     """
     @app.route('/categories')
     def categories():
+        categories ={}
         selection = Category.query.all()
-        current_categories = pagination_categories(request, selection)
-        if len(current_categories) == 0:
+        #current_categories = pagination_categories(request, selection)
+        if len(selection) == 0:
             abort(404)
+        for category in selection:
+            categories[category.id]= category.type
+            
         return jsonify(
-            {
-            'success': True,
-            'category': current_categories,
-            'total_categories': len(current_categories)
-        })
+           {'categories':categories}
+        )
 
     """
     @TODO:
@@ -83,6 +85,10 @@ def create_app(test_config=None):
     """
     @app.route('/questions')
     def questions():
+        categories = {}
+        categories_query = Category.query.all()
+        for category in categories_query:
+            categories[category.id] = category.type
         selection = Question.query.all()
         current_questions = pagination_categories(request, selection)
         if len(current_questions) == 0:
@@ -90,8 +96,9 @@ def create_app(test_config=None):
         return jsonify(
             {
             'success': True,
-            'category': current_questions,
-            'total_questions': len(Question.query.all())
+            'questions': current_questions,
+            'totalQuestions': len(Question.query.all()),
+            'categories': categories
         })
 
     """
@@ -134,9 +141,10 @@ def create_app(test_config=None):
         question = body.get('question', None)
         answer = body.get('answer', None)
         difficulty = body.get('difficulty', None)
-        category = body.get('categories', None)
-        search = body.get('search', None)
-        question = Question(question = question, answer= answer, difficulty= difficulty, category= category)
+        category = body.get('category', None)
+        search = body.get("searchTerm", None)
+        print(search)
+        
         try:
             if search:
                 selection = Question.query.filter(
@@ -145,18 +153,20 @@ def create_app(test_config=None):
                 current_questions = pagination_questions(request, selection)
                 return jsonify({
                     'success': True,
-                    'search_questions': current_questions,
-                    'total_search': len(current_questions)
+                    'questions': current_questions,
+                    'totalQuestions': len(current_questions),
+                    "category": "Entertainment"
                 })
             else:
+                question = Question(question = question, answer= answer, difficulty= difficulty, category= category)
                 question.insert()
                 selection = Question.query.order_by(Question.id).all()
                 current_questions = pagination_questions(request, selection)
                 return jsonify({
                 'success': True,
                 'new_question_id': question.id,
-                'question': current_questions,
-                'total_questions': len(Question.query.all())
+                'questions': current_questions,
+                'totalQuestions': len(Question.query.all())
             })
         except:
             return abort(404)
@@ -199,14 +209,22 @@ def create_app(test_config=None):
     categories in the left column will cause only questions of that
     category to be shown.
     """
-    @app.route('/questions/<int:categories>')
-    def question_categories(categories):
-        selection = Question.query.filter(Question.category==categories).all()
+    @app.route('/categories/<int:category_id>/questions')
+    def question_categories(category_id):
+        category_query = Category.query.filter(Category.id==category_id).all()
+        category_list = []
+        for category in category_query:
+            category_list.append(category.type)
+        print(category_list[0])
+        selection = Question.query.filter(Question.category==category_id).all()
         current_questions = pagination_questions(request, selection)
         return jsonify({
             'success': True,
-            'total_question':len(selection),
-            'questions': current_questions
+            'totalQuestions':len(selection),
+            'questions': current_questions,
+            'currentCategory':category_list[0]
+            
+            
             
         })
         
@@ -222,14 +240,20 @@ def create_app(test_config=None):
     one question at a time is displayed, the user is allowed to answer
     and shown whether they were correct or not.
     """
-    @app.route('/questions/<int:category>/<int:pre_question_id>')
-    def random_questions(category, pre_question_id):
-        selection = Question.query.filter(
-            Question.category==category).filter(Question.id != pre_question_id).order_by(func.random()).limit(1)
+    @app.route('/quizzes', methods = ['POST'])
+    def random_questions():
+        category_query = Category.query.filter().all()
+        category_list = []
+        for category in category_query:
+            category_list.append(category.type)
+        selection = Question.query.order_by(func.random()).limit(1)
         current_question = pagination_questions(request, selection)
+        print(current_question)
         return jsonify({
             'success': True,
-            'question': current_question
+            'question': current_question,
+            'previous_questions': len(Question.query.all()),
+            'quiz_category': current_question[0]['category']
         })
     """
     @TODO:
