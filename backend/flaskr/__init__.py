@@ -37,36 +37,41 @@ def create_app(test_config=None):
 
     @app.route('/categories')
     def categories():
-        categories ={}
-        selection = Category.query.all()
-        #current_categories = pagination_categories(request, selection)
-        if len(selection) == 0:
-            abort(404)
-        for category in selection:
-            categories[category.id]= category.type
-            
-        return jsonify(
-           {'categories':categories}
-                    )
+        try:
+            categories ={}
+            selection = Category.query.all()
+            #current_categories = pagination_categories(request, selection)
+            if len(selection) == 0:
+                abort(404)
+            for category in selection:
+                categories[category.id]= category.type
+                
+            return jsonify(
+            {'categories':categories}
+                        )
+        except Exception as e:
+            print(e)
 
     @app.route('/questions')
     def questions():
-        categories = {}
-        categories_query = Category.query.all()
-        for category in categories_query:
-            categories[category.id] = category.type
-        selection = Question.query.all()
-        current_questions = pagination_questions(request, selection)
-        if len(current_questions) == 0:
-            abort(404)
-        return jsonify(
-            {
-            'success': True,
-            'questions': current_questions,
-            'totalQuestions': len(Question.query.all()),
-            'categories': categories
-        })
-
+        try:
+            categories = {}
+            categories_query = Category.query.all()
+            for category in categories_query:
+                categories[category.id] = category.type
+            selection = Question.query.all()
+            current_questions = pagination_questions(request, selection)
+            if len(current_questions) == 0:
+                abort(404)
+            return jsonify(
+                {
+                'success': True,
+                'questions': current_questions,
+                'totalQuestions': len(Question.query.all()),
+                'categories': categories
+            })
+        except Exception as e:
+            print(e)
  
     @app.route('/questions/<int:question_id>', methods = ['DELETE'])
     def remove_question(question_id):
@@ -83,47 +88,96 @@ def create_app(test_config=None):
                 'questions': current_questions,
                 'total_questions_NOW': len(Question.query.all())
             })
-        except Exception:
-            return abort(422)
+        except Exception as e:
+            print(e)
 
     @app.route('/questions', methods = ['POST'])
     def add_question():
         body = request.get_json()
-        question = body.get('question', None)
-        answer = body.get('answer', None)
-        difficulty = body.get('difficulty', None)
-        category = body.get('category', None)
-        search = body.get("searchTerm", None)
-        print(search)
-        
-        try:
-            if search:
-                selection = Question.query.filter(
-                    Question.question.ilike('%{}%'.format(search))
-                )
-                current_questions = pagination_questions(request, selection)
-                if len(current_questions) == 0:
-                    return {
-                        'questions': [{'question':'Question is not Available'}],
-                    }
-                return {
-                    "questions": current_questions,
-                    "totalQuestions": len(Question.query.all())
-                        }
-            else:
-                question = Question(question = question, answer= answer, difficulty= difficulty, category= category)
-                question.insert()
-                selection = Question.query.order_by(Question.id).all()
-                current_questions = pagination_questions(request, selection)
+        question = body.get('question')
+        answer = body.get('answer')
+        difficulty = body.get('difficulty')
+        category = body.get('category')
 
-                return jsonify({
-                'success': True,
-                'new_question_id': question.id,
-                'questions': current_questions,
-                'totalQuestions': len(Question.query.all())
-            })
-        except Exception:
-            return abort(404)
+        try:
+            if body is None:
+                abort(400)
+            search = body.get("searchTerm")
+            if search:
+                try:
+                    selection = Question.query.filter(
+                        Question.question.ilike('%{}%'.format(search))
+                    )
+                    current_questions = pagination_questions(request, selection)
+                    if len(current_questions) == 0:
+                        return {
+                            'questions': [{'question':'Question is not Available'}],
+                        }
+                    return {
+                        "questions": current_questions,
+                        "totalQuestions": len(Question.query.all())
+                            }
+                except Exception as e:
+                    print(e)
+            
+            if len(question)==0:
+                abort(400)
+            
+            if len(answer)==0:
+                abort(400)
+            
+            if difficulty is None:
+                abort(400)
+            
+            if category is None:
+                abort(400)
+            
+            else:
+                try:
+                    question = Question(question = question, answer= answer, difficulty= difficulty, category= category)
+                    question.insert()
+                    selection = Question.query.order_by(Question.id).all()
+                    current_questions = pagination_questions(request, selection)
+
+                    return jsonify({
+                        'success': True,
+                        'new_question_id': question.id,
+                        'questions': current_questions,
+                        'totalQuestions': len(Question.query.all())
+                    })
+                except Exception as e:
+                    print(e)
+        except Exception as e:
+            print(e)
+        
+        # try:
+        #     if search:
+        #         selection = Question.query.filter(
+        #             Question.question.ilike('%{}%'.format(search))
+        #         )
+        #         current_questions = pagination_questions(request, selection)
+        #         if len(current_questions) == 0:
+        #             return {
+        #                 'questions': [{'question':'Question is not Available'}],
+        #             }
+        #         return {
+        #             "questions": current_questions,
+        #             "totalQuestions": len(Question.query.all())
+        #                 }
+        #     else:
+        #         question = Question(question = question, answer= answer, difficulty= difficulty, category= category)
+        #         question.insert()
+        #         selection = Question.query.order_by(Question.id).all()
+        #         current_questions = pagination_questions(request, selection)
+
+        #         return jsonify({
+        #         'success': True,
+        #         'new_question_id': question.id,
+        #         'questions': current_questions,
+        #         'totalQuestions': len(Question.query.all())
+        #     })
+        # except Exception as e:
+        #     print(e)
         
     # @app.route('/questions', methods = ['POST'])
     # def search_question():
@@ -151,46 +205,52 @@ def create_app(test_config=None):
         category_query = Category.query.filter(Category.id==category_id).all()
         if len(category_query) == 0:
             abort(404)
+        try:
+            category_list = []
+            for category in category_query:
+                category_list.append(category.type)
 
-        category_list = []
-        for category in category_query:
-            category_list.append(category.type)
-
-        selection = Question.query.filter(Question.category==category_id).all()
-        current_questions = pagination_questions(request, selection)
-        return jsonify({
-            'success': True,
-            'totalQuestions':len(selection),
-            'questions': current_questions,
-            'currentCategory':category_list[0]    
-        })
+            selection = Question.query.filter(Question.category==category_id).all()
+            current_questions = pagination_questions(request, selection)
+            return jsonify({
+                'success': True,
+                'totalQuestions':len(selection),
+                'questions': current_questions,
+                'currentCategory':category_list[0]    
+            })
+        except Exception as e:
+            print(e)
         
     @app.route('/quizzes', methods = ['POST'])
     def random_questions():
         body = request.get_json('play-category')
-        print(body)
+        if body is None:
+            abort(400)
         previous_questions = body.get('previous_questions')
         quiz_category = body.get('quiz_category')['id']
         #quiz_category_catgory = body.get('quiz_category')['type']
         print(previous_questions)
 
-        if quiz_category==0:
-            selection = Question.query.filter(~Question.id.in_(previous_questions)).order_by(func.random()).limit(1)
-            current_question = pagination_questions(request, selection)
-            print(current_question)
-        else:
-            selection = Question.query.filter(Question.category==quiz_category and ~Question.id.in_(previous_questions)).order_by(func.random()).limit(1)
-            current_question = pagination_questions(request, selection)
-            print(current_question)
-        return {
-                "question": {
-                "id": current_question[0]['id'],
-                "question": current_question[0]['question'],
-                "answer": current_question[0]['answer'],
-                "difficulty": current_question[0]['category'],
-                "category": current_question[0]['difficulty']
-                }
-}
+        try:
+            if quiz_category==0:
+                selection = Question.query.filter(~Question.id.in_(previous_questions)).order_by(func.random()).limit(1)
+                current_question = pagination_questions(request, selection)
+                print(current_question)
+            else:
+                selection = Question.query.filter(Question.category==quiz_category and ~Question.id.in_(previous_questions)).order_by(func.random()).limit(1)
+                current_question = pagination_questions(request, selection)
+                print(current_question)
+            return {
+                    "question": {
+                    "id": current_question[0]['id'],
+                    "question": current_question[0]['question'],
+                    "answer": current_question[0]['answer'],
+                    "difficulty": current_question[0]['category'],
+                    "category": current_question[0]['difficulty']
+                        }
+                    }
+        except Exception as e:
+            print(e)
 
     @app.errorhandler(400)
     def bad_request(error):
@@ -215,6 +275,14 @@ def create_app(test_config=None):
             'error': 422,
             'message':'Unprocessable'
             }), 422
+
+    @app.errorhandler(500)
+    def Internal_server_error(error):
+        return jsonify({
+            'success': False,
+            'error': 500,
+            'message':'Internal Server Error'
+            }), 500
 
 
     return app
