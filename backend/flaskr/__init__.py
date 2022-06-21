@@ -1,4 +1,5 @@
 
+from logging import exception
 from flask import Flask, request, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
@@ -69,11 +70,10 @@ def create_app(test_config=None):
  
     @app.route('/questions/<int:question_id>', methods = ['DELETE'])
     def remove_question(question_id):
+        question = Question.query.filter(Question.id == question_id).one_or_none()
+        if question is None:
+                abort(400)
         try:
-            question = Question.query.filter(Question.id == question_id).one_or_none()
-            if question is None:
-                abort(404)
-
             question.delete()
             selection = Question.query.order_by(Question.id).all()
             current_questions = pagination_questions(request, selection)
@@ -83,7 +83,7 @@ def create_app(test_config=None):
                 'questions': current_questions,
                 'total_questions_NOW': len(Question.query.all())
             })
-        except:
+        except Exception:
             return abort(422)
 
     @app.route('/questions', methods = ['POST'])
@@ -102,10 +102,9 @@ def create_app(test_config=None):
                     Question.question.ilike('%{}%'.format(search))
                 )
                 current_questions = pagination_questions(request, selection)
-                print(current_questions)
                 if len(current_questions) == 0:
                     return {
-                        'questions': [{'question':'Question is not Available'}]
+                        'questions': [{'question':'Question is not Available'}],
                     }
                 return {
                     "questions": current_questions,
@@ -123,7 +122,7 @@ def create_app(test_config=None):
                 'questions': current_questions,
                 'totalQuestions': len(Question.query.all())
             })
-        except:
+        except Exception:
             return abort(404)
         
     # @app.route('/questions', methods = ['POST'])
@@ -150,10 +149,13 @@ def create_app(test_config=None):
     @app.route('/categories/<int:category_id>/questions')
     def question_categories(category_id):
         category_query = Category.query.filter(Category.id==category_id).all()
+        if len(category_query) == 0:
+            abort(404)
+
         category_list = []
         for category in category_query:
             category_list.append(category.type)
-        print(category_list[0])
+
         selection = Question.query.filter(Question.category==category_id).all()
         current_questions = pagination_questions(request, selection)
         return jsonify({
@@ -166,9 +168,10 @@ def create_app(test_config=None):
     @app.route('/quizzes', methods = ['POST'])
     def random_questions():
         body = request.get_json('play-category')
+        print(body)
         previous_questions = body.get('previous_questions')
         quiz_category = body.get('quiz_category')['id']
-        quiz_category_catgory = body.get('quiz_category')['type']
+        #quiz_category_catgory = body.get('quiz_category')['type']
         print(previous_questions)
 
         if quiz_category==0:
@@ -202,7 +205,7 @@ def create_app(test_config=None):
         return jsonify({
             'success': False,
             'error': 404,
-            'message':'This page does not exist'
+            'message':'Not Found'
             }), 404
 
     @app.errorhandler(422)

@@ -345,6 +345,21 @@ POST /questions
   ],
   "totalQuestions": 20
 
+POST /quizzes
+- General:
+  - Play quiz game by providing the quiz category and previous questions. Note that the game will not repeat question.
+- Sample curl -d '{"previous_questions":[], "quiz_category": {"id":0}}' -H 'Content-Type: application/json' -X POST http://127.0.0.1:5000/quizzes
+
+{
+  "question": {
+    "answer": "Hi Guys",
+    "category": 4,
+    "difficulty": 1,
+    "id": 68,
+    "question": "Hello John"
+  }
+}
+
 # Authors
 Joseph Ogwuche
 
