@@ -21,7 +21,7 @@ class TriviaTestCase(unittest.TestCase):
         self.database_path = "postgresql://{}:{}@{}/{}".format(env['DB_USER'], env['DB_PASSWORD'], env['HOST'], self.database_name)
         setup_db(self.app, self.database_path)
 
-        self.new_question = {'question': 'What is the capital of Nigeria', 'answer': 'Abuja', 'categroy': 3, 'difficulty': 3}
+        self.new_question = {'question': 'What is the capital of Nigeria', 'answer': 'Abuja', 'category': 3, 'difficulty': 3}
 
         # binds the app to the current context
         with self.app.app_context():
@@ -54,20 +54,25 @@ class TriviaTestCase(unittest.TestCase):
     
     def test_delete_question(self):
         res = self.client().delete('/questions/12')
-        self.assertEqual(res.status, '200 OK') 
+        self.assertEqual(res.status_code, 200) 
     
     def test_delete_question_400(self):
         res = self.client().delete('/questions/120')
-        self.assertEqual(res.status, '400 BAD REQUEST') 
+        self.assertEqual(res.status_code, 400) 
 
     def test_delete_question_failure(self):
         res = self.client().delete('/questions')
-        self.assertEqual(res.status, '405 METHOD NOT ALLOWED') 
+        self.assertEqual(res.status_code, 405) 
 
     
     def test_new_question(self):
         res = self.client().post('/questions', json = self.new_question)
-        self.assertEqual(res.status, '200 OK') 
+        self.assertEqual(res.status_code, 200) 
+
+    def test_new_question_500(self):
+        res = self.client().post('/questions', json = {"question": "Hello John", "answer": "Hi Guys", "categoy": 1, "difficulty": 4})
+        self.assertEqual(res.status_code, 500) 
+    
     
     def test_search_term(self):
         res = self.client().post('/questions', json = {'searchTerm': 'nigeria'})
@@ -93,13 +98,13 @@ class TriviaTestCase(unittest.TestCase):
         res = self.client().post('/quizzes', json={"previous_questions":[], "quiz_category": {"id":0}})
         data = json.loads(res.data)
 
-        self.assertEqual(res.status, '200 OK')
+        self.assertEqual(res.status_code, 200)
 
     def test_quizzes_404(self):
         res = self.client().post('/quizzes/1', json={"previous_questions":[], "quiz_category": {"id":0}})
         data = json.loads(res.data)
 
-        self.assertEqual(res.status, '404 NOT FOUND')
+        self.assertEqual(res.status_code, 404)
 
 # Make the tests conveniently executable
 if __name__ == "__main__":
