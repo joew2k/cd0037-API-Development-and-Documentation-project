@@ -324,7 +324,10 @@ POST /questions
     - Add new question to when question details are specified, it also return a search term when a search term is specified.
 - Adding new question: curl -d '{"question": "Hello John", "answer": "Hi Guys", "category": 1, "difficulty": 4}' -H 'Content-Type: application/json' -X POST http://127.0.0.1:5000/questions
 
-- Search a question: curl -d '{"searchTerm": "hello"}' -H 'Content-Type: application/json' -X POST http://127.0.0.1:5000/questions
+POST /questions/search
+- General
+    - return a search questions.
+- Search a question: curl -d '{"searchTerm": "hello"}' -H 'Content-Type: application/json' -X POST http://127.0.0.1:5000/questions/search
 
 {
   "questions": [

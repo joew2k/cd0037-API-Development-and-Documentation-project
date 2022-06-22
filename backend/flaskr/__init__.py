@@ -118,12 +118,12 @@ def create_app(test_config=None):
                         "totalQuestions": len(Question.query.all())
                             }
                 except Exception as e:
-                    print(e)
+                    return(e)
             
-            if len(question)==0:
+            if question is None:
                 abort(400)
             
-            if len(answer)==0:
+            if answer is None:
                 abort(400)
             
             if difficulty is None:
@@ -146,9 +146,9 @@ def create_app(test_config=None):
                         'totalQuestions': len(Question.query.all())
                     })
                 except Exception as e:
-                    print(e)
+                    return(e)
         except Exception as e:
-            print(e)
+            return(e)
         
         # try:
         #     if search:
@@ -179,26 +179,33 @@ def create_app(test_config=None):
         # except Exception as e:
         #     print(e)
         
-    # @app.route('/questions', methods = ['POST'])
-    # def search_question():
-    #     body = request.get_json()
-    #     search = body.get('search', None)
+    @app.route('/questions/search', methods = ['POST'])
+    def search_question():
+        body = request.get_json()
+        search = body.get('searchTerm')
+        if body is None:
+            abort(405)
 
-    #     try:
-    #         if search:
-    #             selection = Question.query.filter(
-    #                 Question.question.ilike('%{}%').format(search)
-    #             )
-    #             current_questions = pagination_questions(request, selection)
-    #             return jsonify({
-    #                 'success': True,
-    #                 'search_questions': current_questions,
-    #                 'total_search': len(current_questions)
-    #             })
-    #         else:
-    #             return abort(404)
-    #     except:
-    #         abort(422)
+        try:
+            if search:
+                selection = Question.query.filter(
+                    Question.question.ilike('%{}%'.format(search))
+                )
+                current_questions = pagination_questions(request, selection)
+                if len(current_questions)==0:
+                    return jsonify({
+                    'success': False,
+                    'total_search': len(current_questions)
+                })
+                return jsonify({
+                    'success': True,
+                    'questions': current_questions,
+                    'total_search': len(current_questions)
+                })
+            else:
+                return abort(404)
+        except Exception as e:
+            print(e)
 
     @app.route('/categories/<int:category_id>/questions')
     def question_categories(category_id):
@@ -235,11 +242,11 @@ def create_app(test_config=None):
             if quiz_category==0:
                 selection = Question.query.filter(~Question.id.in_(previous_questions)).order_by(func.random()).limit(1)
                 current_question = pagination_questions(request, selection)
-                print(current_question)
+                # print(current_question)
             else:
                 selection = Question.query.filter(Question.category==quiz_category and ~Question.id.in_(previous_questions)).order_by(func.random()).limit(1)
                 current_question = pagination_questions(request, selection)
-                print(current_question)
+                # print(current_question)
             return {
                     "question": {
                     "id": current_question[0]['id'],

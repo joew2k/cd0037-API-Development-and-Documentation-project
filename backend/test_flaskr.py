@@ -44,23 +44,35 @@ class TriviaTestCase(unittest.TestCase):
 
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data['success'], True)
+    
+    def test_get_paginated_question_404(self):
+        res = self.client().get('/question')
+        data = json.loads(res.data)
+
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(data['success'], False)
 
     def test_get_categories(self):
         res = self.client().get('/categories')
         data = json.loads(res.data)
         self.assertEqual(res.status_code, 200)
         self.assertTrue(len(res.data))
-       
+
+    def test_get_categories_404(self):
+        res = self.client().get('/categories/1')
+        data = json.loads(res.data)
+        self.assertEqual(res.status_code, 404)
+        self.assertTrue(len(res.data))
     
     def test_delete_question(self):
-        res = self.client().delete('/questions/12')
+        res = self.client().delete('/questions/25')
         self.assertEqual(res.status_code, 200) 
     
     def test_delete_question_400(self):
         res = self.client().delete('/questions/120')
         self.assertEqual(res.status_code, 400) 
 
-    def test_delete_question_failure(self):
+    def test_delete_question_405(self):
         res = self.client().delete('/questions')
         self.assertEqual(res.status_code, 405) 
 
@@ -68,16 +80,23 @@ class TriviaTestCase(unittest.TestCase):
     def test_new_question(self):
         res = self.client().post('/questions', json = self.new_question)
         self.assertEqual(res.status_code, 200) 
-
-    def test_new_question_500(self):
-        res = self.client().post('/questions', json = {"question": "Hello John", "answer": "Hi Guys", "categoy": 1, "difficulty": 4})
-        self.assertEqual(res.status_code, 500) 
     
+    def test_new_question_405(self):
+        res = self.client().post('/questions/1', json = self.new_question)
+        self.assertEqual(res.status_code, 405) 
     
     def test_search_term(self):
-        res = self.client().post('/questions', json = {'searchTerm': 'nigeria'})
+        res = self.client().post('/questions/search', json = {'searchTerm': 'nigeria'})
         data = json.loads(res.data)
+        self.assertEqual(res.status_code, 200) 
         self.assertTrue(len(data['questions']))
+    
+    def test_search_term_no_result(self):
+        res = self.client().post('/questions/search', json = {'searchTerm': 'gsttg'})
+        data = json.loads(res.data)
+        print(data)
+        self.assertEqual(res.status_code, 200) 
+        self.assertEqual(data['success'], False)
 
     
     def test_question_based_category(self):
