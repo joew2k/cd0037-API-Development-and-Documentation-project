@@ -244,7 +244,7 @@ def create_app(test_config=None):
                 current_question = pagination_questions(request, selection)
                 # print(current_question)
             else:
-                selection = Question.query.filter(Question.category==quiz_category and ~Question.id.in_(previous_questions)).order_by(func.random()).limit(1)
+                selection = Question.query.filter(Question.category==quiz_category).filter(Question.id.not_in(previous_questions)).order_by(func.random()).limit(1)
                 current_question = pagination_questions(request, selection)
                 # print(current_question)
             return {
