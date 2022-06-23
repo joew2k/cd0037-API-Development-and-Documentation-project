@@ -244,7 +244,16 @@ def create_app(test_config=None):
                 current_question = pagination_questions(request, selection)
                 # print(current_question)
             else:
-                selection = Question.query.filter(Question.category==quiz_category).filter(Question.id.not_in(previous_questions)).order_by(func.random()).limit(1)
+                total_question = Question.query.filter(Question.category==quiz_category).all()
+                print(len(total_question))
+                if len(total_question) == len(previous_questions):
+                    return {
+                    "question": False
+                        
+                    }
+                selection = Question.query.filter(
+                    Question.category==quiz_category).filter(
+                        Question.id.not_in(previous_questions)).order_by(func.random()).limit(1)
                 current_question = pagination_questions(request, selection)
                 # print(current_question)
             return {
